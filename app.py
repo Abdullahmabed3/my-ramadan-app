@@ -23,14 +23,8 @@ try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     
     # محاولة القراءة
-    df = conn.read(worksheet="khatma")
-    
-    st.subheader("📖 سجل إنجازك اليوم")
-    with st.form("my_form"):
-        name = st.text_input("اسمك:")
-        part = st.number_input("الجزء الحالي:", min_value=1, max_value=30)
-        submit = st.form_submit_button("تحديث")
-        
+    df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/1ZO143By7FOmskmGri9d5N24V4WiE0P7SOoUmY27-Cu4/edit", worksheet="khatma")
+
         if submit and name:
             # إضافة البيانات الجديدة
             new_data = pd.DataFrame([{"Name": name, "Part": part}])
