@@ -2,15 +2,14 @@ import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
-# إعدادات تجعل التطبيق يبدو احترافياً على الموبايل
+# إعدادات الموبايل
 st.set_page_config(page_title="روحانيات رمضان", page_icon="🌙", initial_sidebar_state="collapsed")
 
-# كود سحري لإصلاح شكل الحروف والعربية ومنع التداخل
+# تحسين الخطوط والعربية
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo&display=swap');
     html, body, [class*="css"] { font-family: 'Cairo', sans-serif; text-align: right; direction: RTL; }
-    /* إخفاء القائمة الجانبية افتراضياً لتوسيع المساحة */
     [data-testid="sidebarNavView"] { display: none; }
     .stTable { direction: RTL; }
     </style>
@@ -18,27 +17,33 @@ st.markdown("""
 
 st.title("🌙 تطبيق رمضان المشترك")
 
-try:
-    # الاتصال بقاعدة البيانات
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    
-    # محاولة القراءة
-    df = conn.read(spreadsheet="https://docs.google.com/spreadsheets/d/1ZO143By7FOmskmGri9d5N24V4WiE0P7SOoUmY27-Cu4/edit", worksheet="khatma")
+# رابط الشيت الخاص بك مباشرة
+url = "https://docs.google.com/spreadsheets/d/1ZO143By7FOmskmGri9d5N24V4WiE0P7SOoUmY27-Cu4/edit"
 
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    df = conn.read(spreadsheet=url, worksheet="khatma")
+
+    st.subheader("📖 سجل إنجازك اليوم")
+    with st.form("my_form"):
+        name = st.text_input("اسمك:")
+        part = st.number_input("وصلت للجزء رقم:", min_value=1, max_value=30)
+        submit = st.form_submit_button("تحديث الإنجاز")
+        
         if submit and name:
-            # إضافة البيانات الجديدة
-            new_data = pd.DataFrame([{"Name": name, "Part": part}])
-            updated_df = pd.concat([df, new_data], ignore_index=True)
-            conn.update(worksheet="khatma", data=updated_df)
-            st.success("تم التحديث بنجاح!")
+            new_entry = pd.DataFrame([{"Name": name, "Part": part}])
+            updated_df = pd.concat([df, new_entry], ignore_index=True)
+            conn.update(spreadsheet=url, worksheet="khatma", data=updated_df)
+            st.success(f"تم التسجيل بنجاح يا {name}!")
             st.rerun()
 
     st.divider()
     st.subheader("🏆 لوحة الأصدقاء")
-    st.table(df)
+    if not df.empty:
+        st.table(df)
+    else:
+        st.info("لا توجد بيانات مسجلة بعد. كن أول من يسجل!")
 
 except Exception as e:
-    st.error("⚠️ خطأ في الاتصال بملف جوجل شيت")
-    st.info("تأكد من عمل 'Share' للملف بوضع 'Editor' والتأكد من الرابط في Secrets.")
-    # بيانات وهمية حتى لا تظل الصفحة فارغة
-    st.table(pd.DataFrame({"الاسم": ["مثال"], "الجزء": [1]}))
+    st.error("⚠️ فشل الاتصال التلقائي.")
+    st.info("تأكد أن الملف في جوجل شيت يحتوي على أعمدة Name و Part في الصف الأول.")
