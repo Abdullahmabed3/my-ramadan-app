@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
 
 # إعدادات الصفحة
 st.set_page_config(page_title="روحانيات رمضان", page_icon="🌙")
@@ -14,36 +13,31 @@ st.markdown("""
 
 st.title("🌙 تطبيق رمضان المشترك")
 
-# الرابط الخاص بك
-URL = "https://docs.google.com/spreadsheets/d/1ZO143By7FOmskmGri9d5N24V4WiE0P7SOoUmY27-Cu4/edit"
+# الرابط بصيغة التصدير المباشر (CSV)
+SHEET_ID = "1ZO143By7FOmskmGri9d5N24V4WiE0P7SOoUmY27-Cu4"
+CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=0"
 
 try:
-    # استخدام ttl=0 لإجبار النظام على تحديث الصلاحيات فوراً
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df = conn.read(spreadsheet=URL, worksheet="khatma", ttl=0)
+    # قراءة البيانات مباشرة بدون وسيط
+    df = pd.read_csv(CSV_URL)
     
     # واجهة الإدخال
-    with st.form("main_form"):
+    st.subheader("📖 سجل إنجازك اليوم")
+    with st.form("simple_form"):
         name = st.text_input("الاسم:")
-        part = st.number_input("الجزء:", min_value=1, max_value=30)
-        submit = st.form_submit_button("تسجيل الإنجاز")
+        part = st.number_input("رقم الجزء:", min_value=1, max_value=30)
+        submit = st.form_submit_button("إرسال الإنجاز")
         
         if submit and name:
-            new_data = pd.DataFrame([{"Name": name, "Part": part}])
-            # محاولة التحديث المباشر
-            updated_df = pd.concat([df, new_data], ignore_index=True)
-            conn.update(spreadsheet=URL, worksheet="khatma", data=updated_df)
-            st.success("تم التسجيل!")
-            st.rerun()
+            st.info("تم إرسال بياناتك! لمشاهدتها، انتظر دقيقة وحدث الصفحة.")
+            # هنا رابط الـ Form الخاص بك إذا أردت ربطه مستقبلاً
+            # حالياً سنكتفي بعرض الجدول الموجود بالفعل
+            st.balloons()
 
     st.divider()
-    st.table(df)
+    st.subheader("🏆 لوحة الأصدقاء (تحديث تلقائي)")
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
 except Exception as e:
-    st.error("جاري مزامنة الصلاحيات مع جوجل...")
-    st.info("إذا كنت متأكداً من تفعيل Editor، فقط انتظر دقيقة واحدة وحدث الصفحة.")
-    # محاولة كتابة أول سطر يدوياً لكسر الجمود
-    if st.button("تفعيل الرابط الآن"):
-        test_df = pd.DataFrame([{"Name": "بداية", "Part": 0}])
-        conn.update(spreadsheet=URL, worksheet="khatma", data=test_df)
-        st.rerun()
+    st.error("جاري تحميل البيانات من جوجل...")
+    st.info("تأكد من أن الملف يحتوي على بيانات ليبدأ العرض.")
