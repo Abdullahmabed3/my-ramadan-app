@@ -3,62 +3,47 @@ import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
 # إعدادات الصفحة
-st.set_page_config(page_title="روحانيات رمضان", page_icon="🌙", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="روحانيات رمضان", page_icon="🌙")
 
-# تحسين التصميم
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo&display=swap');
     html, body, [class*="css"] { font-family: 'Cairo', sans-serif; text-align: right; direction: RTL; }
-    [data-testid="sidebarNavView"] { display: none; }
-    .stDataFrame { direction: RTL; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🌙 تطبيق رمضان المشترك")
 
-# رابط الشيت المباشر
+# الرابط الخاص بك
 URL = "https://docs.google.com/spreadsheets/d/1ZO143By7FOmskmGri9d5N24V4WiE0P7SOoUmY27-Cu4/edit"
 
 try:
-    # إنشاء اتصال جديد مع تعطيل الذاكرة المؤقتة (ttl=0) لضمان قراءة التعديلات الجديدة
+    # استخدام ttl=0 لإجبار النظام على تحديث الصلاحيات فوراً
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read(spreadsheet=URL, worksheet="khatma", ttl=0)
     
-    # التأكد من وجود الأعمدة
-    if df is None or df.empty or 'Name' not in df.columns:
-        df = pd.DataFrame(columns=['Name', 'Part'])
-
-    # نموذج تسجيل البيانات
-    st.subheader("📖 سجل إنجازك اليوم")
-    with st.form("main_form", clear_on_submit=True):
-        u_name = st.text_input("اسمك الكريم:")
-        u_part = st.number_input("الجزء الحالي:", min_value=1, max_value=30, step=1)
-        if st.form_submit_button("تحديث إنجازي"):
-            if u_name:
-                new_row = pd.DataFrame([{"Name": u_name, "Part": u_part}])
-                updated_df = pd.concat([df, new_row], ignore_index=True)
-                # رفع البيانات للشيت
-                conn.update(spreadsheet=URL, worksheet="khatma", data=updated_df)
-                st.success(f"تقبل الله منك يا {u_name}!")
-                st.balloons()
-                st.rerun()
-            else:
-                st.warning("يرجى كتابة الاسم")
+    # واجهة الإدخال
+    with st.form("main_form"):
+        name = st.text_input("الاسم:")
+        part = st.number_input("الجزء:", min_value=1, max_value=30)
+        submit = st.form_submit_button("تسجيل الإنجاز")
+        
+        if submit and name:
+            new_data = pd.DataFrame([{"Name": name, "Part": part}])
+            # محاولة التحديث المباشر
+            updated_df = pd.concat([df, new_data], ignore_index=True)
+            conn.update(spreadsheet=URL, worksheet="khatma", data=updated_df)
+            st.success("تم التسجيل!")
+            st.rerun()
 
     st.divider()
-    st.subheader("🏆 لوحة الأصدقاء")
-    st.dataframe(df[['Name', 'Part']], use_container_width=True, hide_index=True)
+    st.table(df)
 
 except Exception as e:
-    st.info("بانتظار تفعيل الاتصال النهائي...")
-    # زر الإصلاح السريع
-    if st.button("تفعيل الجدول الآن"):
-        try:
-            # كتابة الأعمدة الأساسية مباشرة في الشيت
-            initial_df = pd.DataFrame(columns=['Name', 'Part'])
-            conn.update(spreadsheet=URL, worksheet="khatma", data=initial_df)
-            st.success("تم التفعيل! يرجى إعادة تحميل الصفحة.")
-            st.rerun()
-        except:
-            st.error("تأكد من أن رابط جوجل شيت مضبوط على Editor")
+    st.error("جاري مزامنة الصلاحيات مع جوجل...")
+    st.info("إذا كنت متأكداً من تفعيل Editor، فقط انتظر دقيقة واحدة وحدث الصفحة.")
+    # محاولة كتابة أول سطر يدوياً لكسر الجمود
+    if st.button("تفعيل الرابط الآن"):
+        test_df = pd.DataFrame([{"Name": "بداية", "Part": 0}])
+        conn.update(spreadsheet=URL, worksheet="khatma", data=test_df)
+        st.rerun()
