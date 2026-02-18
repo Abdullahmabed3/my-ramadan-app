@@ -10,9 +10,16 @@ st.set_page_config(page_title="روحانيات رمضان", page_icon="🌙", l
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-    html, body, [class*="css"] { font-family: 'Cairo', sans-serif; text-align: right; direction: RTL; }
-    .stButton>button { width: 100%; border-radius: 20px; background-color: #2e7d32; color: white; }
-    .stTextInput>div>div>input { text-align: right; }
+    html, body, [class*="css"] { 
+        font-family: 'Cairo', sans-serif; 
+        text-align: right; 
+        direction: RTL; 
+    }
+    /* منع تداخل النصوص في الهواتف */
+    .stApp {
+        margin: 0 auto;
+        font-family: 'Cairo', sans-serif;
+    }
     </style>
     """, unsafe_allow_html=True)
 
